@@ -68,21 +68,21 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   public void initialize() {
-    Log.d("GameView", "initialize() called - loading bitmaps");
+    Log.d("GameView", "initialize() called - loading vector drawables");
     me = getBitmapFromVectorDrawable(R.drawable.player_avatar);
     you = getBitmapFromVectorDrawable(R.drawable.computer_avatar);
     highlight = BitmapFactory.decodeResource(getResources(), R.drawable.highlight);
     highlighta = BitmapFactory.decodeResource(getResources(), R.drawable.highlighta);
-    bindudr = BitmapFactory.decodeResource(getResources(), R.drawable.bindudr);
-    binduldr = BitmapFactory.decodeResource(getResources(), R.drawable.binduldr);
-    binduld = BitmapFactory.decodeResource(getResources(), R.drawable.binduld);
-    bindutr = BitmapFactory.decodeResource(getResources(), R.drawable.bindutr);
-    bindultr = BitmapFactory.decodeResource(getResources(), R.drawable.bindultr);
-    bindult = BitmapFactory.decodeResource(getResources(), R.drawable.bindult);
-    bindudrt = BitmapFactory.decodeResource(getResources(), R.drawable.bindudrt);
-    binduldrt = BitmapFactory.decodeResource(getResources(), R.drawable.binduldrt);
-    bindudlt = BitmapFactory.decodeResource(getResources(), R.drawable.bindudlt);
-    Log.d("GameView", "Bitmaps loaded, creating thread");
+    bindudr = getBitmapFromVectorDrawable(R.drawable.bindudr);
+    binduldr = getBitmapFromVectorDrawable(R.drawable.binduldr);
+    binduld = getBitmapFromVectorDrawable(R.drawable.binduld);
+    bindutr = getBitmapFromVectorDrawable(R.drawable.bindutr);
+    bindultr = getBitmapFromVectorDrawable(R.drawable.bindultr);
+    bindult = getBitmapFromVectorDrawable(R.drawable.bindult);
+    bindudrt = getBitmapFromVectorDrawable(R.drawable.bindudrt);
+    binduldrt = getBitmapFromVectorDrawable(R.drawable.binduldrt);
+    bindudlt = getBitmapFromVectorDrawable(R.drawable.bindudlt);
+    Log.d("GameView", "Vector drawables loaded, creating thread");
     _thread = new PaintThread(getHolder());
     _gameState.statusMessage = R.string.player_two_turn;
     updateScore(_gameState);
