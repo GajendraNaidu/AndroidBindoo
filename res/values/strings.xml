@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<string name="app_name">Bindoo...</string>
+    <string name="column_width">80</string>
+    <string name="row_height">80</string>
+    <string name="player_one_turn">Computer turn !</string>
+    <string name="player_two_turn">Player turn !</string>
+    <string name="congrats_player_one_turn">Congratulations! Go for another turns !</string>
+    <string name="player_one_game_over">Congratulations! You (i.e Jerry) won !</string>
+    <string name="tie_game_over">Game. Tie !</string>
+    <string name="player_two_game_over"><![CDATA[Hmm.. Computer (i.e Tom) won !]]></string>
+    <string name="crash_toast_text">Ooooops ! Computer crashed, but a report has been sent to my developer to help him fix the issue !</string>
+    <string name="game_header1_text"><![CDATA["<small>COMPUTER (i.e Tom) &nbspi;</small><b><big><big>PLAYER (i.e Jerry) </big></big></b>"]]></string>
+		<string name="game_header_text"><![CDATA["<small>Player (Jerry): </small><b><big><big><font  color='#4317D5'>%1$s</font> </big></big> </b>  <small>Computer (Tom): </small><b> <big><big> <font color='#FD9B16'>%2$s</font></big></big></b>  <small>%3$s</small>"]]></string>
+		<string name="play_again_option"><![CDATA[Do you want to play again?]]></string>
+</resources>
