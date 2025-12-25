@@ -209,16 +209,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
       canvas.drawColor(Color.BLACK);
 
-      if (_gameState.Points != null) {
-        for (GamePoint point : _gameState.Points) {
-          drawPoint(canvas, point);
-        }
-      }
+      // Draw lines first (behind)
       if (_gameState.ConnectedLines != null) {
         for (GameLine line : _gameState.ConnectedLines) {
           if (line.isLineDrawn) {
             drawLine(canvas, line);
           }
+        }
+      }
+
+      // Draw dots on top of lines
+      if (_gameState.Points != null) {
+        for (GamePoint point : _gameState.Points) {
+          drawPoint(canvas, point);
         }
       }
 
@@ -334,8 +337,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       }
     }
 
-    int x = getLeft(point.X)-20;
-    int y = getTop(point.Y)-20;
+    // Center the dot bitmap - use actual bitmap dimensions
+    int x = getLeft(point.X) - (bindoo.getWidth() / 2);
+    int y = getTop(point.Y) - (bindoo.getHeight() / 2);
     Paint paint1 = new Paint();
     canvas.drawBitmap(bindoo, x, y, paint1);
   }
