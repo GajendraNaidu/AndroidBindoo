@@ -27,6 +27,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   private int          margin                = 40;  // Balanced margin on all sides
   private Handler      handler;
   private GamePoint    previouslyClickGamePoint;
+  private GamePoint    dragStartPoint;
+  private float        dragCurrentX;
+  private float        dragCurrentY;
+  private boolean      isDragging            = false;
   private PaintThread  _thread;
   private Bitmap me = null;
   private Bitmap you = null;
@@ -92,33 +96,67 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   @Override
   public boolean onTouchEvent(MotionEvent mv) {
     try {
-      if (mv.getAction() == MotionEvent.ACTION_DOWN) {
-        float xClick = mv.getX();
-        float yClick = mv.getY();
-        GamePoint point = getGamePoint(xClick, yClick);
-        if (point != null && previouslyClickGamePoint == null) {
-          previouslyClickGamePoint = point;
-          _gameState.pointSelected = previouslyClickGamePoint;
-          point = null;
-        }
+      switch (mv.getAction()) {
+        case MotionEvent.ACTION_DOWN:
+          // Start dragging from a dot
+          float xDown = mv.getX();
+          float yDown = mv.getY();
+          GamePoint startPoint = getGamePoint(xDown, yDown);
+          if (startPoint != null) {
+            dragStartPoint = startPoint;
+            dragCurrentX = xDown;
+            dragCurrentY = yDown;
+            isDragging = true;
+            _gameState.pointSelected = dragStartPoint;
+          }
+          break;
 
-        if (point != null && previouslyClickGamePoint != null) {
-          GameLine gameLine = new GameLine(previouslyClickGamePoint, point);
-          boolean canLineDrawn = GameUtils.CanDrawLine(previouslyClickGamePoint, point);
-          if (canLineDrawn) {
-            GameLine lineToBeDrawn = GameUtils.GetGameLineWithThisLine(gameLine, _gameState);
-            if (lineToBeDrawn != null) {
-              lineToBeDrawn.SetLineDrawn(true, false);
-              boolean isFillDrawn = drawFillIfExist(false);
-              if (!isFillDrawn) {
-                ComputerToPlay();
+        case MotionEvent.ACTION_MOVE:
+          // Update drag position for preview line
+          if (isDragging && dragStartPoint != null) {
+            dragCurrentX = mv.getX();
+            dragCurrentY = mv.getY();
+          }
+          break;
+
+        case MotionEvent.ACTION_UP:
+          // Complete the drag - try to draw line to end point
+          if (isDragging && dragStartPoint != null) {
+            float xUp = mv.getX();
+            float yUp = mv.getY();
+            GamePoint endPoint = getGamePoint(xUp, yUp);
+
+            if (endPoint != null && !endPoint.equals(dragStartPoint)) {
+              GameLine gameLine = new GameLine(dragStartPoint, endPoint);
+              boolean canLineDrawn = GameUtils.CanDrawLine(dragStartPoint, endPoint);
+              if (canLineDrawn) {
+                GameLine lineToBeDrawn = GameUtils.GetGameLineWithThisLine(gameLine, _gameState);
+                // Only draw if line exists and is not already drawn
+                if (lineToBeDrawn != null && !lineToBeDrawn.isLineDrawn) {
+                  lineToBeDrawn.SetLineDrawn(true, false);
+                  boolean isFillDrawn = drawFillIfExist(false);
+                  if (!isFillDrawn) {
+                    ComputerToPlay();
+                  }
+                }
               }
             }
+
+            // Reset drag state
+            isDragging = false;
+            dragStartPoint = null;
+            _gameState.pointSelected = null;
+            previouslyClickGamePoint = null;
           }
+          break;
+
+        case MotionEvent.ACTION_CANCEL:
+          // Cancel drag
+          isDragging = false;
+          dragStartPoint = null;
           _gameState.pointSelected = null;
           previouslyClickGamePoint = null;
-        }
-
+          break;
       }
       return true;
     } catch (Exception e) {
@@ -233,11 +271,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
       }
 
+      // Draw preview line while dragging
+      if (isDragging && dragStartPoint != null) {
+        drawPreviewLine(canvas);
+      }
+
       if(_gameState.isGameOver) {
         _thread.state = PaintThread.PAUSED;
       }else {
-        if(previouslyClickGamePoint != null) {
-          drawHighlight(canvas, previouslyClickGamePoint);
+        if(dragStartPoint != null) {
+          drawHighlight(canvas, dragStartPoint);
         }
       }
 
@@ -253,15 +296,35 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   public void drawHighlight(Canvas canvas,GamePoint point) {
     int x = getLeft(point.X);
     int y = getTop(point.Y);
-    Paint paint = new Paint();    
+    Paint paint = new Paint();
     canvas.drawBitmap(highlight, (x-20), (y-20), paint);
-    
+
     List<GamePoint> anotherJoinPoints = GameUtils.GetHighlightedGamePoint(point, _gameState);
     for (GamePoint gamePoint : anotherJoinPoints) {
       x = getLeft(gamePoint.X);
       y = getTop(gamePoint.Y);
       canvas.drawBitmap(highlighta, (x-20), (y-20), paint);
     }
+  }
+
+  private void drawPreviewLine(Canvas canvas) {
+    if (dragStartPoint == null) return;
+
+    Paint paint = new Paint();
+    paint.setAntiAlias(true);
+    paint.setStrokeCap(Paint.Cap.ROUND);
+    paint.setColor(Color.rgb(67, 23, 213));  // Blue for player
+    paint.setAlpha(128);  // Semi-transparent
+    paint.setStrokeWidth(8);
+
+    // Draw line from start dot to current finger position
+    canvas.drawLine(
+        getLeft(dragStartPoint.X),
+        getTop(dragStartPoint.Y),
+        dragCurrentX,
+        dragCurrentY,
+        paint
+    );
   }
 
 
