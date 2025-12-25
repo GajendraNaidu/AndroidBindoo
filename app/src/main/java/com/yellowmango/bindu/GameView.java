@@ -21,7 +21,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   private GameState    _gameState;
   private float        singleColumnWidth     = 0;
   private float        singleColumnHeight    = 0;
-  private int          margin                = 13;
+  private int          margin                = 40;  // Balanced margin on all sides
   private Handler      handler;
   private GamePoint    previouslyClickGamePoint;
   private PaintThread  _thread;
@@ -145,9 +145,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   @Override
   public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2, int arg3) {
     Log.d("GameView", "surfaceChanged: format=" + arg1 + " width=" + arg2 + " height=" + arg3);
-    singleColumnWidth = (arg2 - (2 * margin)) / (float) _gameState.getNumberOfColumns();
-    singleColumnHeight = (arg3 - (2 * margin)) / (float) _gameState.getNumberOfRows();
-    Log.d("GameView", "Cell size: " + singleColumnWidth + "x" + singleColumnHeight);
+    // Calculate spacing between dots (divide by n-1 for proper grid spacing)
+    int cols = _gameState.getNumberOfColumns();
+    int rows = _gameState.getNumberOfRows();
+    singleColumnWidth = (arg2 - (2 * margin)) / (float) (cols - 1);
+    singleColumnHeight = (arg3 - (2 * margin)) / (float) (rows - 1);
+    Log.d("GameView", "Dot spacing: " + singleColumnWidth + "x" + singleColumnHeight + " for " + cols + "x" + rows + " grid");
   }
 
   @Override
