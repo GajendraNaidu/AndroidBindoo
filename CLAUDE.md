@@ -4,35 +4,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AndroidBindu is a "Dots and Boxes" style game for Android where a player (Jerry) competes against a computer opponent (Tom). This is a legacy Android project using Eclipse ADT and Ant build system, targeting Android API level 9 (Android 2.3 Gingerbread).
+AndroidBindu is a "Dots and Boxes" style game for Android where a player (Jerry) competes against a computer opponent (Tom). This project uses modern Gradle build system with:
+- Minimum SDK: API 21 (Android 5.0 Lollipop)
+- Target/Compile SDK: API 34 (Android 14)
+- AndroidX support libraries
+- Java source code
 
 ## Build Commands
 
-This project uses the legacy Eclipse/Ant build system, not Gradle. The project is configured in `.classpath` and `.project` files.
+This project uses the modern Gradle build system. The project is configured in `build.gradle` and `app/build.gradle` files.
 
-**Building with Eclipse:**
-- Import the project into Eclipse with Android Development Tools (ADT) plugin
-- Eclipse will automatically build when source files are saved
-- The compiled APK will be placed in `bin/AndroidBindu.apk`
+**Building with Android Studio:**
+- Open the project in Android Studio
+- Gradle will automatically sync
+- Build → Make Project or Run → Run 'app'
+- The compiled APK will be placed in `app/build/outputs/apk/`
 
-**Building with Ant (if configured):**
+**Building from command line:**
 ```bash
-# Update the project for command-line builds
-android update project --path .
-
 # Debug build
-ant debug
+./gradlew assembleDebug
 
 # Release build
-ant release
+./gradlew assembleRelease
+
+# Install on device
+./gradlew installDebug
+
+# Clean build
+./gradlew clean
+
+# Build and install
+./gradlew clean assembleDebug installDebug
 ```
 
-**Installing to device:**
+**Running tests:**
 ```bash
-# Install the debug APK
-adb install -r bin/AndroidBindu.apk
+./gradlew test
+```
 
-# View logs
+**Other useful commands:**
+```bash
+# List all available tasks
+./gradlew tasks
+
+# View dependencies
+./gradlew dependencies
+
+# View logs (requires adb)
 adb logcat
 ```
 
@@ -46,19 +65,19 @@ The application follows a classic Android MVC pattern with a custom game renderi
 
 ### Core Game Components
 
-**GameView** (src/com/yellowmango/bindu/GameView.java)
+**GameView** (app/src/main/java/com/yellowmango/bindu/GameView.java)
 - Custom SurfaceView that handles rendering and touch input
 - Contains inner `PaintThread` class that continuously redraws the game at ~4 FPS (250ms delay)
 - Manages bitmaps for game elements (dots with different connection states, player symbols, highlights)
 - Communicates score updates to GameActivity via Handler/Message pattern
 - Touch handling: First tap selects a point (shows highlight), second tap draws a line if valid
 
-**GameState** (src/com/yellowmango/bindu/GameState.java)
+**GameState** (app/src/main/java/com/yellowmango/bindu/GameState.java)
 - Central game state container
 - Maintains collections of: Points (grid dots), ConnectedLines (drawn lines), GameFills (completed boxes), strayFills (all possible boxes)
 - Tracks whose turn it is, game over status, and current status message
 
-**GameUtils** (src/com/yellowmango/bindu/GameUtils.java)
+**GameUtils** (app/src/main/java/com/yellowmango/bindu/GameUtils.java)
 - Static utility methods for game logic
 - `GuesssALine()` - Computer AI logic: prioritizes completing boxes, otherwise draws randomly
 - `IsNewFillExist()` - Detects when a box is completed by checking if all 4 sides are drawn
@@ -67,21 +86,21 @@ The application follows a classic Android MVC pattern with a custom game renderi
 
 ### Game Entities
 
-**GamePoint** (src/com/yellowmango/bindu/GamePoint.java)
+**GamePoint** (app/src/main/java/com/yellowmango/bindu/GamePoint.java)
 - Represents a dot in the grid with X,Y coordinates
 - Implements equals/hashCode for proper collection usage
 
-**GameLine** (src/com/yellowmango/bindu/GameLine.java)
+**GameLine** (app/src/main/java/com/yellowmango/bindu/GameLine.java)
 - Represents a line between two GamePoints
 - Tracks whether line is drawn and who drew it (player or computer)
 - Custom `equals()` method handles bidirectional line comparison
 
-**GameFill** (src/com/yellowmango/bindu/GameFill.java)
+**GameFill** (app/src/main/java/com/yellowmango/bindu/GameFill.java)
 - Represents a completed box defined by four corner points
 - Tracks whether it's owned by computer or player
 - Used for scoring
 
-**GameScore** (src/com/yellowmango/bindu/GameScore.java)
+**GameScore** (app/src/main/java/com/yellowmango/bindu/GameScore.java)
 - Simple data container for score tracking
 
 ### Game Flow
@@ -113,7 +132,7 @@ GameView sends score updates to GameActivity using Android Handler/Message patte
 
 ## Key Constants
 
-Located in `res/values/strings.xml`:
+Located in `app/src/main/res/values/strings.xml`:
 - `column_width`: 80 pixels
 - `row_height`: 80 pixels
 - Grid size calculated dynamically: columns = screen_width/80, rows = screen_height/80
