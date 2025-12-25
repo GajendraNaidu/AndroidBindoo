@@ -15,6 +15,9 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.DrawableCompat;
+import android.graphics.drawable.Drawable;
 
 public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -52,10 +55,22 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     this.handler = handler;
   }
 
+  private Bitmap getBitmapFromVectorDrawable(int drawableId) {
+    Drawable drawable = ContextCompat.getDrawable(getContext(), drawableId);
+    if (drawable == null) return null;
+
+    Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(),
+        drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+    Canvas canvas = new Canvas(bitmap);
+    drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+    drawable.draw(canvas);
+    return bitmap;
+  }
+
   public void initialize() {
     Log.d("GameView", "initialize() called - loading bitmaps");
-    me = BitmapFactory.decodeResource(getResources(), R.drawable.me);
-    you = BitmapFactory.decodeResource(getResources(), R.drawable.you);
+    me = getBitmapFromVectorDrawable(R.drawable.player_avatar);
+    you = getBitmapFromVectorDrawable(R.drawable.computer_avatar);
     highlight = BitmapFactory.decodeResource(getResources(), R.drawable.highlight);
     highlighta = BitmapFactory.decodeResource(getResources(), R.drawable.highlighta);
     bindudr = BitmapFactory.decodeResource(getResources(), R.drawable.bindudr);
@@ -279,12 +294,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       paint1.setColor(Color.rgb(67, 23, 213));   // Blue for player
     }
     paint1.setStrokeWidth(8);  // Much thicker lines for visibility
-    
-    if(line.PointOne.X == line.PointTwo.X) {
-      canvas.drawLine(getLeft(line.PointOne.X), getTop(line.PointOne.Y)+11, getLeft(line.PointTwo.X), getTop(line.PointTwo.Y)-9, paint1);
-    } else {
-      canvas.drawLine(getLeft(line.PointOne.X)+11, getTop(line.PointOne.Y), getLeft(line.PointTwo.X)-9, getTop(line.PointTwo.Y), paint1);
-    }
+
+    // Draw line from center to center of dots
+    canvas.drawLine(getLeft(line.PointOne.X), getTop(line.PointOne.Y),
+                    getLeft(line.PointTwo.X), getTop(line.PointTwo.Y), paint1);
   }
 
 
@@ -328,20 +341,25 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   private void drawFill(Canvas canvas, GameFill fill) {
-    int x = getLeft(fill.TopLeft.X) + 2;
-    int y = getTop(fill.TopLeft.Y) + 2;
-    if(singleColumnWidth >= 100) {
-      x =  x + (int)(singleColumnWidth - (100*0.9))/2;
-    }
-    if(singleColumnHeight >= 66) {
-      y =  y + (int)(singleColumnHeight - (66*0.9))/2;
-    }
+    // Get the box boundaries
+    int boxLeft = getLeft(fill.TopLeft.X);
+    int boxTop = getTop(fill.TopLeft.Y);
+    int boxRight = getLeft(fill.BottomRight.X);
+    int boxBottom = getTop(fill.BottomRight.Y);
+
+    // Calculate box dimensions
+    int boxWidth = boxRight - boxLeft;
+    int boxHeight = boxBottom - boxTop;
+
+    // Select the appropriate avatar
+    Bitmap avatar = fill.isComputerFill ? you : me;
+
+    // Center the avatar in the box
+    int x = boxLeft + (boxWidth - avatar.getWidth()) / 2;
+    int y = boxTop + (boxHeight - avatar.getHeight()) / 2;
+
     Paint paint = new Paint();
-    if (fill.isComputerFill) {
-      canvas.drawBitmap(you, x, y, paint);
-    } else {
-      canvas.drawBitmap(me, x, y, paint);
-    }
+    canvas.drawBitmap(avatar, x, y, paint);
   }
 
   class PaintThread extends Thread {
