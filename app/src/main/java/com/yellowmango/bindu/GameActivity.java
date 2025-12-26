@@ -4,6 +4,7 @@ import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Point;
@@ -12,8 +13,12 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.Html;
 import android.view.Display;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -45,8 +50,7 @@ public class GameActivity extends AppCompatActivity {
         String comments = getString(m.getData().getInt("3"));
 
         if (m.getData().getBoolean("0")) {
-          String finalMessage = "Jerry: " + playerOne + "  Tom: " + playerTwo + "\n" + comments + "\n" + getString(R.string.play_again_option);
-          getAlertDialog(finalMessage).show();
+          showFancyWinnerDialog(playerOne, playerTwo, comments);
         }
       }
     });
@@ -112,6 +116,110 @@ public class GameActivity extends AppCompatActivity {
     });
     AlertDialog alert = builder.create();
     return alert;
+  }
+
+  private void showFancyWinnerDialog(int jerryScore, int tomScore, String winnerMessage) {
+    // Create custom dialog
+    final Dialog dialog = new Dialog(this);
+    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+    dialog.setCancelable(false);
+
+    // Inflate custom layout
+    LayoutInflater inflater = getLayoutInflater();
+    View dialogView = inflater.inflate(R.layout.winner_dialog, null);
+    dialog.setContentView(dialogView);
+
+    // Get views
+    TextView trophyIcon = dialogView.findViewById(R.id.trophyIcon);
+    TextView winnerTitle = dialogView.findViewById(R.id.winnerTitle);
+    TextView winnerName = dialogView.findViewById(R.id.winnerName);
+    TextView playerScoreText = dialogView.findViewById(R.id.playerScore);
+    TextView computerScoreText = dialogView.findViewById(R.id.computerScore);
+    View scoreContainer = dialogView.findViewById(R.id.scoreContainer);
+    View buttonContainer = dialogView.findViewById(R.id.buttonContainer);
+    TextView playAgainButton = dialogView.findViewById(R.id.playAgainButton);
+    TextView exitButton = dialogView.findViewById(R.id.exitButton);
+
+    // Set scores
+    playerScoreText.setText("You: " + jerryScore);
+    computerScoreText.setText("Computer: " + tomScore);
+
+    // Determine winner and set colors
+    if (jerryScore > tomScore) {
+      winnerName.setText("YOU WIN!");
+      winnerName.setTextColor(0xFF4317D5);
+      winnerTitle.setVisibility(View.GONE);
+    } else if (tomScore > jerryScore) {
+      winnerName.setText("COMPUTER WINS!");
+      winnerName.setTextColor(0xFFFD9B16);
+      winnerTitle.setVisibility(View.GONE);
+    } else {
+      winnerTitle.setText("DRAW!");
+      winnerName.setText("");
+    }
+
+    // Set up animations
+    Animation trophyAnim = AnimationUtils.loadAnimation(this, R.anim.trophy_bounce);
+    Animation titleAnim = AnimationUtils.loadAnimation(this, R.anim.winner_title_anim);
+    Animation nameAnim = AnimationUtils.loadAnimation(this, R.anim.winner_name_anim);
+    Animation scoreAnim = AnimationUtils.loadAnimation(this, R.anim.score_fade_in);
+    Animation buttonsAnim = AnimationUtils.loadAnimation(this, R.anim.buttons_fade_in);
+
+    // Set initial alpha to 0 for animation effect, then start animations
+    trophyIcon.setAlpha(0f);
+    winnerTitle.setAlpha(0f);
+    winnerName.setAlpha(0f);
+    scoreContainer.setAlpha(0f);
+    buttonContainer.setAlpha(0f);
+
+    // Add animation listeners to ensure views stay visible after animation
+    buttonsAnim.setAnimationListener(new Animation.AnimationListener() {
+      @Override
+      public void onAnimationStart(Animation animation) {}
+
+      @Override
+      public void onAnimationEnd(Animation animation) {
+        trophyIcon.setAlpha(1f);
+        winnerTitle.setAlpha(1f);
+        winnerName.setAlpha(1f);
+        scoreContainer.setAlpha(1f);
+        buttonContainer.setAlpha(1f);
+      }
+
+      @Override
+      public void onAnimationRepeat(Animation animation) {}
+    });
+
+    trophyIcon.startAnimation(trophyAnim);
+    winnerTitle.startAnimation(titleAnim);
+    winnerName.startAnimation(nameAnim);
+    scoreContainer.startAnimation(scoreAnim);
+    buttonContainer.startAnimation(buttonsAnim);
+
+    // Button click listeners
+    playAgainButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        dialog.dismiss();
+        startActivity(new Intent(GameActivity.this, GameActivity.class));
+        finish();
+      }
+    });
+
+    exitButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        dialog.dismiss();
+        finish();
+      }
+    });
+
+    // Make dialog background transparent
+    if (dialog.getWindow() != null) {
+      dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+    }
+
+    dialog.show();
   }
   
   @Override
