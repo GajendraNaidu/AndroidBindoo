@@ -24,19 +24,18 @@ public class GameActivity extends AppCompatActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    
+
     LinearLayout layout =  new LinearLayout(this);
     layout.setOrientation(LinearLayout.VERTICAL);
-    final TextView _textView = new TextView(this);
-    layout.addView(_textView);
-    AddingGameView(_textView, layout);
+
+    AddingGameView(layout);
 
     this.requestWindowFeature(Window.FEATURE_NO_TITLE);
     this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
     setContentView(layout);
   }
 
-  private void AddingGameView(final TextView _textView, final LinearLayout layout) {
+  private void AddingGameView(final LinearLayout layout) {
     _gameState = new GameState();
     GameView  _gameView  = new GameView(this, _gameState, new Handler() {
       @Override
@@ -44,19 +43,14 @@ public class GameActivity extends AppCompatActivity {
         Integer playerOne = m.getData().getInt("1", 0);
         Integer playerTwo = m.getData().getInt("2", 0);
         String comments = getString(m.getData().getInt("3"));
-        String finalString = String.format(getString(R.string.game_header_text), new Object[] { "" + playerOne, "" + playerTwo, comments });
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-          _textView.setText(Html.fromHtml(finalString, Html.FROM_HTML_MODE_LEGACY));
-        } else {
-          _textView.setText(Html.fromHtml(finalString));
-        }
+
         if (m.getData().getBoolean("0")) {
-          comments += "\n"+getString(R.string.play_again_option);
-          getAlertDialog(comments).show();
+          String finalMessage = "Jerry: " + playerOne + "  Tom: " + playerTwo + "\n" + comments + "\n" + getString(R.string.play_again_option);
+          getAlertDialog(finalMessage).show();
         }
       }
     });
-    layout.addView(_gameView, 1);
+    layout.addView(_gameView, 0);
     
     
     Display dis = getWindowManager().getDefaultDisplay();

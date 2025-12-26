@@ -24,7 +24,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   private GameState    _gameState;
   private float        singleColumnWidth     = 0;
   private float        singleColumnHeight    = 0;
-  private int          margin                = 40;  // Balanced margin on all sides
+  private int          marginTop             = 60;  // Extra top margin
+  private int          marginRight           = 60;  // Extra right margin
+  private int          marginBottom          = 40;  // Bottom margin
+  private int          marginLeft            = 40;  // Left margin
   private Handler      handler;
   private GamePoint    previouslyClickGamePoint;
   private GamePoint    dragStartPoint;
@@ -170,6 +173,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     while (gameFill != null) {
       gameFill.isComputerFill = computerPlayed;
       gameFill.isAddedToGameState = true;
+
+      // Calculate and assign score number for this player
+      int currentScore = 0;
+      for (GameFill fill : _gameState.GameFills) {
+        if (fill.isComputerFill == computerPlayed) {
+          currentScore++;
+        }
+      }
+      gameFill.scoreNumber = currentScore + 1;
+
       _gameState.AddFill(gameFill);
       isGameFilled = true;
       gameFill = GameUtils.IsNewFillExist(_gameState);
@@ -201,8 +214,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     // Calculate spacing between dots (divide by n-1 for proper grid spacing)
     int cols = _gameState.getNumberOfColumns();
     int rows = _gameState.getNumberOfRows();
-    singleColumnWidth = (arg2 - (2 * margin)) / (float) (cols - 1);
-    singleColumnHeight = (arg3 - (2 * margin)) / (float) (rows - 1);
+    singleColumnWidth = (arg2 - marginLeft - marginRight) / (float) (cols - 1);
+    singleColumnHeight = (arg3 - marginTop - marginBottom) / (float) (rows - 1);
     Log.d("GameView", "Dot spacing: " + singleColumnWidth + "x" + singleColumnHeight + " for " + cols + "x" + rows + " grid");
   }
 
@@ -297,13 +310,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     int x = getLeft(point.X);
     int y = getTop(point.Y);
     Paint paint = new Paint();
-    canvas.drawBitmap(highlight, (x-20), (y-20), paint);
+    // Center the highlight bitmap on the dot
+    int highlightOffsetX = highlight.getWidth() / 2;
+    int highlightOffsetY = highlight.getHeight() / 2;
+    canvas.drawBitmap(highlight, (x - highlightOffsetX), (y - highlightOffsetY), paint);
 
     List<GamePoint> anotherJoinPoints = GameUtils.GetHighlightedGamePoint(point, _gameState);
     for (GamePoint gamePoint : anotherJoinPoints) {
       x = getLeft(gamePoint.X);
       y = getTop(gamePoint.Y);
-      canvas.drawBitmap(highlighta, (x-20), (y-20), paint);
+      int highlightaOffsetX = highlighta.getWidth() / 2;
+      int highlightaOffsetY = highlighta.getHeight() / 2;
+      canvas.drawBitmap(highlighta, (x - highlightaOffsetX), (y - highlightaOffsetY), paint);
     }
   }
 
@@ -427,6 +445,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     Paint paint = new Paint();
     canvas.drawBitmap(avatar, x, y, paint);
+
+    // Draw score number in top-right corner (with more padding from edges)
+    Paint textPaint = new Paint();
+    textPaint.setAntiAlias(true);
+    textPaint.setTextSize(24);
+    textPaint.setStyle(Paint.Style.FILL);
+    textPaint.setColor(fill.isComputerFill ? Color.parseColor("#FD9B16") : Color.parseColor("#4317D5"));
+    textPaint.setTextAlign(Paint.Align.RIGHT);
+
+    String scoreText = String.valueOf(fill.scoreNumber);
+    canvas.drawText(scoreText, boxRight - 18, boxTop + 28, textPaint);
   }
 
   class PaintThread extends Thread {
@@ -485,11 +514,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   public int getTop(int Y) {
-    return (int) ((Y * singleColumnHeight) + margin);
+    return (int) ((Y * singleColumnHeight) + marginTop);
   }
 
   public int getLeft(int X) {
-    return (int) ((X * singleColumnWidth) + margin);
+    return (int) ((X * singleColumnWidth) + marginLeft);
   }
 
   public GamePoint getGamePoint(float x, float y) {

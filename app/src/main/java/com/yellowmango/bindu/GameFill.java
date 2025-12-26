@@ -8,6 +8,7 @@ public class GameFill {
   public GamePoint BottomRight;
   public boolean   isComputerFill;
   public boolean   isAddedToGameState;
+  public int       scoreNumber;
 
   public GameFill(GamePoint _topLeft, GamePoint _topRight) {
     TopLeft = _topLeft;
