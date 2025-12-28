@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Center brown dot -->
+    <path
+        android:fillColor="#8B4513"
+        android:pathData="M24,24m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0"/>
+
+    <!-- White ash border around center dot -->
+    <path
+        android:strokeColor="#E8E8E8"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M24,24m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0"/>
+
+    <!-- Top connection square -->
+    <path
+        android:fillColor="#E8E8E8"
+        android:pathData="M22,8 L26,8 L26,12 L22,12 Z"/>
+
+    <!-- Right connection square -->
+    <path
+        android:fillColor="#E8E8E8"
+        android:pathData="M36,22 L40,22 L40,26 L36,26 Z"/>
+
+    <!-- Bottom connection square -->
+    <path
+        android:fillColor="#E8E8E8"
+        android:pathData="M22,36 L26,36 L26,40 L22,40 Z"/>
+
+    <!-- Left connection square -->
+    <path
+        android:fillColor="#E8E8E8"
+        android:pathData="M8,22 L12,22 L12,26 L8,26 Z"/>
+</vector>
