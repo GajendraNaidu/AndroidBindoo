@@ -262,6 +262,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
       canvas.drawColor(Color.BLACK);
 
+      // Draw edge border
+      drawEdgeBorder(canvas);
+
       // Draw lines first (behind)
       if (_gameState.ConnectedLines != null) {
         for (GameLine line : _gameState.ConnectedLines) {
@@ -344,6 +347,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         dragCurrentX,
         dragCurrentY,
         paint
+    );
+  }
+
+  private void drawEdgeBorder(Canvas canvas) {
+    Paint borderPaint = new Paint();
+    borderPaint.setAntiAlias(true);
+    borderPaint.setStyle(Paint.Style.STROKE);
+    borderPaint.setColor(Color.rgb(80, 80, 80));  // Subtle gray
+    borderPaint.setStrokeWidth(3);  // Thin line
+
+    // Draw border at screen edges with small inset
+    float inset = 10;  // Small inset from screen edge
+    canvas.drawRect(
+        inset,
+        inset,
+        canvas.getWidth() - inset,
+        canvas.getHeight() - inset,
+        borderPaint
     );
   }
 
