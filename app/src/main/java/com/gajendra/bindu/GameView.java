@@ -136,6 +136,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 GameLine lineToBeDrawn = GameUtils.GetGameLineWithThisLine(gameLine, _gameState);
                 // Only draw if line exists and is not already drawn
                 if (lineToBeDrawn != null && !lineToBeDrawn.isLineDrawn) {
+                  _gameState.lastComputerLine = null;  // Clear highlight when player moves
                   lineToBeDrawn.SetLineDrawn(true, false);
                   boolean isFillDrawn = drawFillIfExist(false);
                   if (!isFillDrawn) {
@@ -198,6 +199,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     GameLine guessLine = GameUtils.GuesssALine(_gameState);
     if (guessLine != null) {
       guessLine.SetLineDrawn(true, true);
+      _gameState.lastComputerLine = guessLine;  // Track last computer move
     }
     boolean isFillDrawn = drawFillIfExist(true);
     if (isFillDrawn) {
@@ -372,12 +374,32 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     paint1.setAntiAlias(true);
     paint1.setStrokeCap(Paint.Cap.ROUND);
 
+    // Check if this is the last computer move - highlight it
+    boolean isLastComputerMove = (_gameState.lastComputerLine != null &&
+                                   line.equals(_gameState.lastComputerLine));
+
     if (line.isComputerDrawn) {
-      paint1.setColor(Color.rgb(253, 155, 22));  // Orange for computer
+      if (isLastComputerMove) {
+        // Draw glow effect for last computer move
+        Paint glowPaint = new Paint();
+        glowPaint.setAntiAlias(true);
+        glowPaint.setStrokeCap(Paint.Cap.ROUND);
+        glowPaint.setColor(Color.rgb(255, 200, 100));  // Bright yellow-orange glow
+        glowPaint.setStrokeWidth(16);  // Thicker for glow
+        glowPaint.setAlpha(120);  // Semi-transparent
+        canvas.drawLine(getLeft(line.PointOne.X), getTop(line.PointOne.Y),
+                       getLeft(line.PointTwo.X), getTop(line.PointTwo.Y), glowPaint);
+
+        paint1.setColor(Color.rgb(255, 200, 50));  // Brighter orange-yellow
+        paint1.setStrokeWidth(10);  // Thicker
+      } else {
+        paint1.setColor(Color.rgb(253, 155, 22));  // Regular orange for computer
+        paint1.setStrokeWidth(8);
+      }
     } else {
       paint1.setColor(Color.rgb(67, 23, 213));   // Blue for player
+      paint1.setStrokeWidth(8);
     }
-    paint1.setStrokeWidth(8);  // Much thicker lines for visibility
 
     // Draw line from center to center of dots
     canvas.drawLine(getLeft(line.PointOne.X), getTop(line.PointOne.Y),

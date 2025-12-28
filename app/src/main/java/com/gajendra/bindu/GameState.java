@@ -19,6 +19,7 @@ public class GameState {
   public int             statusMessage   = 0;
   public GamePoint       pointSelected = null;
   public List<GameFill> strayFills = null;
+  public GameLine        lastComputerLine = null;  // Track last computer move
 
   public GameState() {
     Points          = new ArrayList<GamePoint>();
