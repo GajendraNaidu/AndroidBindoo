@@ -15,7 +15,7 @@
 		</activity>
 		<activity android:name="GameActivity" android:exported="false">
 			<intent-filter>
-				<action android:name="com.yellowmango.bindu.GameActivity" />
+				<action android:name="com.gajendra.bindu.GameActivity" />
 				<category android:name="android.intent.category.DEFAULT" />
 			</intent-filter>
 
