@@ -159,7 +159,7 @@ public class GameActivity extends AppCompatActivity {
     // Determine winner and set colors
     if (jerryScore > tomScore) {
       winnerName.setText("YOU WIN!");
-      winnerName.setTextColor(0xFF4317D5);
+      winnerName.setTextColor(0xFF22C822);
       winnerTitle.setVisibility(View.GONE);
     } else if (tomScore > jerryScore) {
       winnerName.setText("COMPUTER WINS!");

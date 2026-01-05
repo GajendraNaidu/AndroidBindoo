@@ -338,7 +338,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     Paint paint = new Paint();
     paint.setAntiAlias(true);
     paint.setStrokeCap(Paint.Cap.ROUND);
-    paint.setColor(Color.parseColor("#4317D5"));  // Player purple color
+    paint.setColor(Color.parseColor("#22C822"));  // Player green color
     paint.setAlpha(128);  // Semi-transparent
     paint.setStrokeWidth(8);
 
@@ -420,7 +420,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         paint1.setStrokeWidth(8);
       }
     } else {
-      paint1.setColor(Color.parseColor("#4317D5"));   // Player purple color
+      paint1.setColor(Color.parseColor("#22C822"));   // Player green color
       paint1.setStrokeWidth(8);
     }
 
@@ -484,12 +484,55 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     // Select the appropriate avatar
     Bitmap avatar = fill.isComputerFill ? you : me;
 
-    // Center the avatar in the box
+    // Calculate center position for avatar
+    int centerX = boxLeft + boxWidth / 2;
+    int centerY = boxTop + boxHeight / 2;
     int x = boxLeft + (boxWidth - avatar.getWidth()) / 2;
     int y = boxTop + (boxHeight - avatar.getHeight()) / 2;
 
+    // Check if animation should be playing (2 seconds = 2000ms)
+    long currentTime = System.currentTimeMillis();
+    long elapsed = currentTime - fill.animationStartTime;
+    boolean isAnimating = elapsed < 2000;
+
     Paint paint = new Paint();
-    canvas.drawBitmap(avatar, x, y, paint);
+    paint.setAntiAlias(true);
+
+    if (isAnimating) {
+      // Calculate animation progress (0.0 to 1.0)
+      float progress = elapsed / 2000f;
+
+      // Apply bounce easing with scale animation
+      float scale;
+      if (progress < 0.6f) {
+        // Scale up from 0 to 1.2 (overshoot) in first 60%
+        float scaleProgress = progress / 0.6f;
+        scale = scaleProgress * 1.2f;
+      } else {
+        // Bounce back from 1.2 to 1.0 in last 40%
+        float bounceProgress = (progress - 0.6f) / 0.4f;
+        scale = 1.2f - (bounceProgress * 0.2f);
+      }
+
+      // Save canvas state
+      canvas.save();
+
+      // Apply scale transformation around center
+      canvas.scale(scale, scale, centerX, centerY);
+
+      // Add slight rotation for extra flair (oscillates)
+      float rotation = (float) Math.sin(progress * Math.PI * 2) * 5; // ±5 degrees
+      canvas.rotate(rotation, centerX, centerY);
+
+      // Draw avatar with transformation
+      canvas.drawBitmap(avatar, x, y, paint);
+
+      // Restore canvas state
+      canvas.restore();
+    } else {
+      // Draw avatar normally (no animation)
+      canvas.drawBitmap(avatar, x, y, paint);
+    }
 
     // Draw score number in top-right corner (with more padding from edges)
     // Only draw if scoreNumber is properly set (> 0)
@@ -499,7 +542,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
       textPaint.setTextSize(36);
       textPaint.setStyle(Paint.Style.FILL);
       textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-      textPaint.setColor(fill.isComputerFill ? Color.parseColor("#FD9B16") : Color.parseColor("#4317D5"));
+      textPaint.setColor(fill.isComputerFill ? Color.parseColor("#FD9B16") : Color.parseColor("#22C822"));
       textPaint.setTextAlign(Paint.Align.RIGHT);
 
       // Add shadow for better visibility

@@ -12,13 +12,14 @@ public class GameFill implements Serializable {
   public boolean   isComputerFill;
   public boolean   isAddedToGameState;
   public int       scoreNumber;
+  public long      animationStartTime;  // When the fill was created, for animation
 
   public GameFill(GamePoint _topLeft, GamePoint _topRight) {
     TopLeft = _topLeft;
     TopRight = _topRight;
     BottomLeft = new GamePoint(_topLeft.X, (_topLeft.Y + 1));
     BottomRight = new GamePoint(_topRight.X, (_topRight.Y + 1));
-
+    animationStartTime = System.currentTimeMillis();
   }
 
   public GameFill(GamePoint _topLeft, GamePoint _topRight, GamePoint _bottomLeft, GamePoint _bottomRight) {
@@ -26,7 +27,7 @@ public class GameFill implements Serializable {
     TopRight = _topRight;
     BottomLeft = _bottomLeft;
     BottomRight = _bottomRight;
-
+    animationStartTime = System.currentTimeMillis();
   }
 
   public boolean Equals(GameFill anotherObj) {
