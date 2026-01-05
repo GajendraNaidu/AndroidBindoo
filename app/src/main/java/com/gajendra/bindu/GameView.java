@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -183,6 +184,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
       }
       gameFill.scoreNumber = currentScore + 1;
+      Log.d("GameView", "Assigned scoreNumber " + gameFill.scoreNumber + " to " + (computerPlayed ? "computer" : "player") + " fill");
 
       _gameState.AddFill(gameFill);
       isGameFilled = true;
@@ -336,7 +338,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     Paint paint = new Paint();
     paint.setAntiAlias(true);
     paint.setStrokeCap(Paint.Cap.ROUND);
-    paint.setColor(Color.rgb(67, 23, 213));  // Blue for player
+    paint.setColor(Color.parseColor("#4317D5"));  // Player purple color
     paint.setAlpha(128);  // Semi-transparent
     paint.setStrokeWidth(8);
 
@@ -418,7 +420,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         paint1.setStrokeWidth(8);
       }
     } else {
-      paint1.setColor(Color.rgb(67, 23, 213));   // Blue for player
+      paint1.setColor(Color.parseColor("#4317D5"));   // Player purple color
       paint1.setStrokeWidth(8);
     }
 
@@ -490,15 +492,24 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     canvas.drawBitmap(avatar, x, y, paint);
 
     // Draw score number in top-right corner (with more padding from edges)
-    Paint textPaint = new Paint();
-    textPaint.setAntiAlias(true);
-    textPaint.setTextSize(24);
-    textPaint.setStyle(Paint.Style.FILL);
-    textPaint.setColor(fill.isComputerFill ? Color.parseColor("#FD9B16") : Color.parseColor("#4317D5"));
-    textPaint.setTextAlign(Paint.Align.RIGHT);
+    // Only draw if scoreNumber is properly set (> 0)
+    if (fill.scoreNumber > 0) {
+      Paint textPaint = new Paint();
+      textPaint.setAntiAlias(true);
+      textPaint.setTextSize(36);
+      textPaint.setStyle(Paint.Style.FILL);
+      textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+      textPaint.setColor(fill.isComputerFill ? Color.parseColor("#FD9B16") : Color.parseColor("#4317D5"));
+      textPaint.setTextAlign(Paint.Align.RIGHT);
 
-    String scoreText = String.valueOf(fill.scoreNumber);
-    canvas.drawText(scoreText, boxRight - 18, boxTop + 28, textPaint);
+      // Add shadow for better visibility
+      textPaint.setShadowLayer(3, 1, 1, Color.BLACK);
+
+      String scoreText = String.valueOf(fill.scoreNumber);
+      canvas.drawText(scoreText, boxRight - 12, boxTop + 42, textPaint);
+    } else {
+      Log.w("GameView", "Fill has scoreNumber = 0, not displaying. isComputerFill: " + fill.isComputerFill);
+    }
   }
 
   class PaintThread extends Thread {

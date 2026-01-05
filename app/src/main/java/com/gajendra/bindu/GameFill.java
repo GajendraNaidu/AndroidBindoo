@@ -1,6 +1,9 @@
 package com.gajendra.bindu;
 
-public class GameFill {
+import java.io.Serializable;
+
+public class GameFill implements Serializable {
+  private static final long serialVersionUID = 1L;
 
   public GamePoint TopLeft;
   public GamePoint TopRight;
