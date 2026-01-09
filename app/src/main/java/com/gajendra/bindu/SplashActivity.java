@@ -2,6 +2,7 @@ package com.gajendra.bindu;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.MotionEvent;
@@ -38,7 +39,18 @@ public class SplashActivity extends AppCompatActivity {
 
   private void exitSplash() {
     finish();
-    startActivity(new Intent(this, GameActivity.class));
+
+    // Check if this is the first time opening the app
+    SharedPreferences prefs = getSharedPreferences("BinduPrefs", MODE_PRIVATE);
+    boolean tutorialSeen = prefs.getBoolean("tutorial_seen", false);
+
+    if (tutorialSeen) {
+      // User has seen tutorial, go directly to game
+      startActivity(new Intent(this, GameActivity.class));
+    } else {
+      // First time user, show tutorial
+      startActivity(new Intent(this, TutorialActivity.class));
+    }
   }
 
 }

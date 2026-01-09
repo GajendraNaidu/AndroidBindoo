@@ -20,6 +20,12 @@
 			</intent-filter>
 
 		</activity>
+		<activity android:name="TutorialActivity" android:exported="false">
+			<intent-filter>
+				<action android:name="com.gajendra.bindu.TutorialActivity" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
 
 	</application>
 

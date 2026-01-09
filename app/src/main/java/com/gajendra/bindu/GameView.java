@@ -50,6 +50,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   private Bitmap binduldrt = null;
   private Bitmap bindudlt = null;
   private int frameCount = 0;
+  private long computerLineDrawTime = 0;  // Track when computer drew last line
+  private Handler computerMoveHandler = new Handler();  // Handler for delayed computer moves
 
   public GameView(Context context) {
     super(context);
@@ -137,11 +139,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 GameLine lineToBeDrawn = GameUtils.GetGameLineWithThisLine(gameLine, _gameState);
                 // Only draw if line exists and is not already drawn
                 if (lineToBeDrawn != null && !lineToBeDrawn.isLineDrawn) {
+                  // Cancel any pending computer moves
+                  computerMoveHandler.removeCallbacksAndMessages(null);
                   _gameState.lastComputerLine = null;  // Clear highlight when player moves
                   lineToBeDrawn.SetLineDrawn(true, false);
                   boolean isFillDrawn = drawFillIfExist(false);
                   if (!isFillDrawn) {
-                    ComputerToPlay();
+                    // Add small delay before computer's first move
+                    computerMoveHandler.postDelayed(new Runnable() {
+                      @Override
+                      public void run() {
+                        ComputerToPlay();
+                      }
+                    }, 600);  // 600ms delay before computer's first move
                   }
                 }
               }
@@ -202,10 +212,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     if (guessLine != null) {
       guessLine.SetLineDrawn(true, true);
       _gameState.lastComputerLine = guessLine;  // Track last computer move
+      computerLineDrawTime = System.currentTimeMillis();  // Record draw time for animation
     }
     boolean isFillDrawn = drawFillIfExist(true);
     if (isFillDrawn) {
-      ComputerToPlay();
+      // Add delay before computer's next move to make it feel more natural
+      computerMoveHandler.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          ComputerToPlay();
+        }
+      }, 800);  // 800ms delay between computer moves
     } else {
       _gameState.statusMessage = R.string.player_two_turn;
       return;
@@ -227,6 +244,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   public void surfaceDestroyed(SurfaceHolder arg0) {
     boolean retry = true;
     _thread.state = PaintThread.PAUSED;
+    // Cancel any pending computer moves
+    computerMoveHandler.removeCallbacksAndMessages(null);
     while (retry) {
       try {
         _thread.join();
@@ -403,15 +422,31 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     if (line.isComputerDrawn) {
       if (isLastComputerMove) {
-        // Draw glow effect for last computer move
-        Paint glowPaint = new Paint();
-        glowPaint.setAntiAlias(true);
-        glowPaint.setStrokeCap(Paint.Cap.ROUND);
-        glowPaint.setColor(Color.rgb(255, 200, 100));  // Bright yellow-orange glow
-        glowPaint.setStrokeWidth(16);  // Thicker for glow
-        glowPaint.setAlpha(120);  // Semi-transparent
-        canvas.drawLine(getLeft(line.PointOne.X), getTop(line.PointOne.Y),
-                       getLeft(line.PointTwo.X), getTop(line.PointTwo.Y), glowPaint);
+        // Calculate time since line was drawn (in seconds)
+        long timeSinceDrawn = System.currentTimeMillis() - computerLineDrawTime;
+        float fadeTime = 3000f;  // Fade over 3 seconds
+        float fadeProgress = Math.min(1.0f, timeSinceDrawn / fadeTime);
+
+        // Create pulsing effect using sine wave
+        float pulseSpeed = 4.0f;  // Pulses per second
+        float pulsePhase = (timeSinceDrawn / 1000.0f) * pulseSpeed * (float)Math.PI * 2;
+        float pulseIntensity = (float)Math.sin(pulsePhase) * 0.5f + 0.5f;  // 0 to 1
+
+        // Reduce pulse intensity as it fades
+        pulseIntensity *= (1.0f - fadeProgress * 0.7f);
+
+        if (fadeProgress < 1.0f) {
+          // Draw outer glow layer (pulsing)
+          Paint glowPaint = new Paint();
+          glowPaint.setAntiAlias(true);
+          glowPaint.setStrokeCap(Paint.Cap.ROUND);
+          glowPaint.setColor(Color.rgb(255, 200, 100));  // Bright yellow-orange glow
+          glowPaint.setStrokeWidth(18 + pulseIntensity * 6);  // Pulsing width
+          int glowAlpha = (int)(150 * (1.0f - fadeProgress) * (0.5f + pulseIntensity * 0.5f));
+          glowPaint.setAlpha(glowAlpha);
+          canvas.drawLine(getLeft(line.PointOne.X), getTop(line.PointOne.Y),
+                         getLeft(line.PointTwo.X), getTop(line.PointTwo.Y), glowPaint);
+        }
 
         paint1.setColor(Color.rgb(255, 200, 50));  // Brighter orange-yellow
         paint1.setStrokeWidth(10);  // Thicker
