@@ -44,7 +44,7 @@
         android:text="YOU"
         android:textSize="28sp"
         android:textStyle="bold"
-        android:textColor="#4317D5"
+        android:textColor="#22C822"
         android:shadowColor="#000000"
         android:shadowDx="2"
         android:shadowDy="2"
@@ -66,7 +66,7 @@
             android:layout_height="wrap_content"
             android:text="You: 10"
             android:textSize="14sp"
-            android:textColor="#4317D5"
+            android:textColor="#22C822"
             android:textStyle="bold"
             android:layout_marginEnd="16dp" />
 

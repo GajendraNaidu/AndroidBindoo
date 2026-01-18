@@ -1,5 +1,6 @@
 package com.gajendra.bindu;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,6 +26,8 @@ import android.widget.TextView;
 public class GameActivity extends AppCompatActivity {
 
   private GameState _gameState = null;
+  private GameView _gameView = null;
+  private Dialog _winnerDialog = null;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -33,16 +36,14 @@ public class GameActivity extends AppCompatActivity {
     LinearLayout layout =  new LinearLayout(this);
     layout.setOrientation(LinearLayout.VERTICAL);
 
-    AddingGameView(layout);
+    AddingGameView(layout, savedInstanceState);
 
-    this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-    this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
     setContentView(layout);
   }
 
-  private void AddingGameView(final LinearLayout layout) {
+  private void AddingGameView(final LinearLayout layout, Bundle savedInstanceState) {
     _gameState = new GameState();
-    GameView  _gameView  = new GameView(this, _gameState, new Handler() {
+    _gameView = new GameView(this, _gameState, new Handler() {
       @Override
       public void handleMessage(Message m) {
         Integer playerOne = m.getData().getInt("1", 0);
@@ -97,6 +98,10 @@ public class GameActivity extends AppCompatActivity {
       android.util.Log.e("GameActivity", "Error in initialize(): " + e.getMessage(), e);
     }
 
+    // Restore saved state if available
+    if (savedInstanceState != null) {
+      restoreGameState(savedInstanceState);
+    }
   }
 
   public AlertDialog getAlertDialog(String comment) {
@@ -119,15 +124,20 @@ public class GameActivity extends AppCompatActivity {
   }
 
   private void showFancyWinnerDialog(int jerryScore, int tomScore, String winnerMessage) {
+    // Dismiss existing dialog if any
+    if (_winnerDialog != null && _winnerDialog.isShowing()) {
+      _winnerDialog.dismiss();
+    }
+
     // Create custom dialog
-    final Dialog dialog = new Dialog(this);
-    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-    dialog.setCancelable(false);
+    _winnerDialog = new Dialog(this);
+    _winnerDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+    _winnerDialog.setCancelable(false);
 
     // Inflate custom layout
     LayoutInflater inflater = getLayoutInflater();
     View dialogView = inflater.inflate(R.layout.winner_dialog, null);
-    dialog.setContentView(dialogView);
+    _winnerDialog.setContentView(dialogView);
 
     // Get views
     TextView trophyIcon = dialogView.findViewById(R.id.trophyIcon);
@@ -147,7 +157,7 @@ public class GameActivity extends AppCompatActivity {
     // Determine winner and set colors
     if (jerryScore > tomScore) {
       winnerName.setText("YOU WIN!");
-      winnerName.setTextColor(0xFF4317D5);
+      winnerName.setTextColor(0xFF22C822);
       winnerTitle.setVisibility(View.GONE);
     } else if (tomScore > jerryScore) {
       winnerName.setText("COMPUTER WINS!");
@@ -200,7 +210,7 @@ public class GameActivity extends AppCompatActivity {
     playAgainButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        dialog.dismiss();
+        _winnerDialog.dismiss();
         startActivity(new Intent(GameActivity.this, GameActivity.class));
         finish();
       }
@@ -209,19 +219,124 @@ public class GameActivity extends AppCompatActivity {
     exitButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        dialog.dismiss();
+        _winnerDialog.dismiss();
         finish();
       }
     });
 
     // Make dialog background transparent
-    if (dialog.getWindow() != null) {
-      dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+    if (_winnerDialog.getWindow() != null) {
+      _winnerDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
     }
 
-    dialog.show();
+    _winnerDialog.show();
   }
   
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+
+    if (_gameState != null) {
+      android.util.Log.d("GameActivity", "Saving game state");
+
+      // Save grid dimensions
+      outState.putInt("numberOfRows", _gameState.getNumberOfRows());
+      outState.putInt("numberOfColumns", _gameState.getNumberOfColumns());
+
+      // Save game state flags
+      outState.putBoolean("isComputerNextToPlay", _gameState.isComputerNextToPlay);
+      outState.putBoolean("isGameOver", _gameState.isGameOver);
+      outState.putInt("statusMessage", _gameState.statusMessage);
+
+      // Save lines state
+      ArrayList<GameLine> drawnLines = new ArrayList<>();
+      if (_gameState.ConnectedLines != null) {
+        for (GameLine line : _gameState.ConnectedLines) {
+          if (line.isLineDrawn) {
+            drawnLines.add(line);
+          }
+        }
+        outState.putSerializable("drawnLines", drawnLines);
+      }
+
+      // Save fills state
+      if (_gameState.GameFills != null && _gameState.GameFills.size() > 0) {
+        outState.putSerializable("gameFills", new ArrayList<>(_gameState.GameFills));
+      }
+
+      // Save last computer line
+      if (_gameState.lastComputerLine != null) {
+        outState.putSerializable("lastComputerLine", _gameState.lastComputerLine);
+      }
+
+      // Save whether the winner dialog was showing
+      outState.putBoolean("wasDialogShowing", _winnerDialog != null && _winnerDialog.isShowing());
+
+      android.util.Log.d("GameActivity", "Game state saved: " + drawnLines.size() + " lines, " + _gameState.GameFills.size() + " fills");
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void restoreGameState(Bundle savedState) {
+    android.util.Log.d("GameActivity", "Restoring game state");
+
+    // Restore game state flags
+    _gameState.isComputerNextToPlay = savedState.getBoolean("isComputerNextToPlay", false);
+    _gameState.isGameOver = savedState.getBoolean("isGameOver", false);
+    _gameState.statusMessage = savedState.getInt("statusMessage", 0);
+
+    // Restore drawn lines
+    ArrayList<GameLine> drawnLines = (ArrayList<GameLine>) savedState.getSerializable("drawnLines");
+    if (drawnLines != null && _gameState.ConnectedLines != null) {
+      for (GameLine savedLine : drawnLines) {
+        for (GameLine line : _gameState.ConnectedLines) {
+          if (line.equals(savedLine)) {
+            line.SetLineDrawn(true, savedLine.isComputerDrawn);
+            break;
+          }
+        }
+      }
+    }
+
+    // Restore completed fills
+    ArrayList<GameFill> savedFills = (ArrayList<GameFill>) savedState.getSerializable("gameFills");
+    if (savedFills != null) {
+      _gameState.GameFills.clear();
+      _gameState.GameFills.addAll(savedFills);
+    }
+
+    // Restore last computer line
+    GameLine savedLastComputerLine = (GameLine) savedState.getSerializable("lastComputerLine");
+    if (savedLastComputerLine != null && _gameState.ConnectedLines != null) {
+      for (GameLine line : _gameState.ConnectedLines) {
+        if (line.equals(savedLastComputerLine)) {
+          _gameState.lastComputerLine = line;
+          break;
+        }
+      }
+    }
+
+    android.util.Log.d("GameActivity", "Game state restored: " + (drawnLines != null ? drawnLines.size() : 0) + " lines, " + _gameState.GameFills.size() + " fills");
+
+    // Re-show winner dialog if it was showing before rotation
+    boolean wasDialogShowing = savedState.getBoolean("wasDialogShowing", false);
+    if (wasDialogShowing && _gameState.isGameOver) {
+      // Calculate scores from GameFills
+      int playerScore = 0;
+      int computerScore = 0;
+      for (GameFill fill : _gameState.GameFills) {
+        if (fill.isComputerFill) {
+          computerScore++;
+        } else {
+          playerScore++;
+        }
+      }
+
+      // Re-show the dialog
+      showFancyWinnerDialog(playerScore, computerScore, getString(_gameState.statusMessage));
+    }
+  }
+
   @Override
   protected void onPause() {
     super.onPause();
@@ -235,6 +350,12 @@ public class GameActivity extends AppCompatActivity {
   protected void onDestroy() {
     try {
       super.onDestroy();
+
+      // Dismiss dialog if showing to prevent window leak
+      if (_winnerDialog != null && _winnerDialog.isShowing()) {
+        _winnerDialog.dismiss();
+      }
+
       if (_gameState != null) {
         _gameState = null;
       }

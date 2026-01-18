@@ -1,6 +1,9 @@
 package com.gajendra.bindu;
 
-public class GameLine {
+import java.io.Serializable;
+
+public class GameLine implements Serializable {
+  private static final long serialVersionUID = 1L;
   public GamePoint PointOne;
   public GamePoint PointTwo;
   public boolean   isLineDrawn;

@@ -1,6 +1,9 @@
 package com.gajendra.bindu;
 
-public class GamePoint {
+import java.io.Serializable;
+
+public class GamePoint implements Serializable {
+  private static final long serialVersionUID = 1L;
   public int X;
   public int Y;
 

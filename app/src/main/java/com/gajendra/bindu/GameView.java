@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -49,6 +50,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   private Bitmap binduldrt = null;
   private Bitmap bindudlt = null;
   private int frameCount = 0;
+  private long computerLineDrawTime = 0;  // Track when computer drew last line
+  private Handler computerMoveHandler = new Handler();  // Handler for delayed computer moves
 
   public GameView(Context context) {
     super(context);
@@ -136,11 +139,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 GameLine lineToBeDrawn = GameUtils.GetGameLineWithThisLine(gameLine, _gameState);
                 // Only draw if line exists and is not already drawn
                 if (lineToBeDrawn != null && !lineToBeDrawn.isLineDrawn) {
+                  // Cancel any pending computer moves
+                  computerMoveHandler.removeCallbacksAndMessages(null);
                   _gameState.lastComputerLine = null;  // Clear highlight when player moves
                   lineToBeDrawn.SetLineDrawn(true, false);
                   boolean isFillDrawn = drawFillIfExist(false);
                   if (!isFillDrawn) {
-                    ComputerToPlay();
+                    // Add small delay before computer's first move
+                    computerMoveHandler.postDelayed(new Runnable() {
+                      @Override
+                      public void run() {
+                        ComputerToPlay();
+                      }
+                    }, 600);  // 600ms delay before computer's first move
                   }
                 }
               }
@@ -183,6 +194,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
       }
       gameFill.scoreNumber = currentScore + 1;
+      Log.d("GameView", "Assigned scoreNumber " + gameFill.scoreNumber + " to " + (computerPlayed ? "computer" : "player") + " fill");
 
       _gameState.AddFill(gameFill);
       isGameFilled = true;
@@ -200,10 +212,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     if (guessLine != null) {
       guessLine.SetLineDrawn(true, true);
       _gameState.lastComputerLine = guessLine;  // Track last computer move
+      computerLineDrawTime = System.currentTimeMillis();  // Record draw time for animation
     }
     boolean isFillDrawn = drawFillIfExist(true);
     if (isFillDrawn) {
-      ComputerToPlay();
+      // Add delay before computer's next move to make it feel more natural
+      computerMoveHandler.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          ComputerToPlay();
+        }
+      }, 800);  // 800ms delay between computer moves
     } else {
       _gameState.statusMessage = R.string.player_two_turn;
       return;
@@ -225,6 +244,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
   public void surfaceDestroyed(SurfaceHolder arg0) {
     boolean retry = true;
     _thread.state = PaintThread.PAUSED;
+    // Cancel any pending computer moves
+    computerMoveHandler.removeCallbacksAndMessages(null);
     while (retry) {
       try {
         _thread.join();
@@ -336,7 +357,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     Paint paint = new Paint();
     paint.setAntiAlias(true);
     paint.setStrokeCap(Paint.Cap.ROUND);
-    paint.setColor(Color.rgb(67, 23, 213));  // Blue for player
+    paint.setColor(Color.parseColor("#22C822"));  // Player green color
     paint.setAlpha(128);  // Semi-transparent
     paint.setStrokeWidth(8);
 
@@ -401,15 +422,31 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     if (line.isComputerDrawn) {
       if (isLastComputerMove) {
-        // Draw glow effect for last computer move
-        Paint glowPaint = new Paint();
-        glowPaint.setAntiAlias(true);
-        glowPaint.setStrokeCap(Paint.Cap.ROUND);
-        glowPaint.setColor(Color.rgb(255, 200, 100));  // Bright yellow-orange glow
-        glowPaint.setStrokeWidth(16);  // Thicker for glow
-        glowPaint.setAlpha(120);  // Semi-transparent
-        canvas.drawLine(getLeft(line.PointOne.X), getTop(line.PointOne.Y),
-                       getLeft(line.PointTwo.X), getTop(line.PointTwo.Y), glowPaint);
+        // Calculate time since line was drawn (in seconds)
+        long timeSinceDrawn = System.currentTimeMillis() - computerLineDrawTime;
+        float fadeTime = 3000f;  // Fade over 3 seconds
+        float fadeProgress = Math.min(1.0f, timeSinceDrawn / fadeTime);
+
+        // Create pulsing effect using sine wave
+        float pulseSpeed = 4.0f;  // Pulses per second
+        float pulsePhase = (timeSinceDrawn / 1000.0f) * pulseSpeed * (float)Math.PI * 2;
+        float pulseIntensity = (float)Math.sin(pulsePhase) * 0.5f + 0.5f;  // 0 to 1
+
+        // Reduce pulse intensity as it fades
+        pulseIntensity *= (1.0f - fadeProgress * 0.7f);
+
+        if (fadeProgress < 1.0f) {
+          // Draw outer glow layer (pulsing)
+          Paint glowPaint = new Paint();
+          glowPaint.setAntiAlias(true);
+          glowPaint.setStrokeCap(Paint.Cap.ROUND);
+          glowPaint.setColor(Color.rgb(255, 200, 100));  // Bright yellow-orange glow
+          glowPaint.setStrokeWidth(18 + pulseIntensity * 6);  // Pulsing width
+          int glowAlpha = (int)(150 * (1.0f - fadeProgress) * (0.5f + pulseIntensity * 0.5f));
+          glowPaint.setAlpha(glowAlpha);
+          canvas.drawLine(getLeft(line.PointOne.X), getTop(line.PointOne.Y),
+                         getLeft(line.PointTwo.X), getTop(line.PointTwo.Y), glowPaint);
+        }
 
         paint1.setColor(Color.rgb(255, 200, 50));  // Brighter orange-yellow
         paint1.setStrokeWidth(10);  // Thicker
@@ -418,7 +455,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         paint1.setStrokeWidth(8);
       }
     } else {
-      paint1.setColor(Color.rgb(67, 23, 213));   // Blue for player
+      paint1.setColor(Color.parseColor("#22C822"));   // Player green color
       paint1.setStrokeWidth(8);
     }
 
@@ -482,23 +519,75 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     // Select the appropriate avatar
     Bitmap avatar = fill.isComputerFill ? you : me;
 
-    // Center the avatar in the box
+    // Calculate center position for avatar
+    int centerX = boxLeft + boxWidth / 2;
+    int centerY = boxTop + boxHeight / 2;
     int x = boxLeft + (boxWidth - avatar.getWidth()) / 2;
     int y = boxTop + (boxHeight - avatar.getHeight()) / 2;
 
+    // Check if animation should be playing (2 seconds = 2000ms)
+    long currentTime = System.currentTimeMillis();
+    long elapsed = currentTime - fill.animationStartTime;
+    boolean isAnimating = elapsed < 2000;
+
     Paint paint = new Paint();
-    canvas.drawBitmap(avatar, x, y, paint);
+    paint.setAntiAlias(true);
+
+    if (isAnimating) {
+      // Calculate animation progress (0.0 to 1.0)
+      float progress = elapsed / 2000f;
+
+      // Apply bounce easing with scale animation
+      float scale;
+      if (progress < 0.6f) {
+        // Scale up from 0 to 1.2 (overshoot) in first 60%
+        float scaleProgress = progress / 0.6f;
+        scale = scaleProgress * 1.2f;
+      } else {
+        // Bounce back from 1.2 to 1.0 in last 40%
+        float bounceProgress = (progress - 0.6f) / 0.4f;
+        scale = 1.2f - (bounceProgress * 0.2f);
+      }
+
+      // Save canvas state
+      canvas.save();
+
+      // Apply scale transformation around center
+      canvas.scale(scale, scale, centerX, centerY);
+
+      // Add slight rotation for extra flair (oscillates)
+      float rotation = (float) Math.sin(progress * Math.PI * 2) * 5; // ±5 degrees
+      canvas.rotate(rotation, centerX, centerY);
+
+      // Draw avatar with transformation
+      canvas.drawBitmap(avatar, x, y, paint);
+
+      // Restore canvas state
+      canvas.restore();
+    } else {
+      // Draw avatar normally (no animation)
+      canvas.drawBitmap(avatar, x, y, paint);
+    }
 
     // Draw score number in top-right corner (with more padding from edges)
-    Paint textPaint = new Paint();
-    textPaint.setAntiAlias(true);
-    textPaint.setTextSize(24);
-    textPaint.setStyle(Paint.Style.FILL);
-    textPaint.setColor(fill.isComputerFill ? Color.parseColor("#FD9B16") : Color.parseColor("#4317D5"));
-    textPaint.setTextAlign(Paint.Align.RIGHT);
+    // Only draw if scoreNumber is properly set (> 0)
+    if (fill.scoreNumber > 0) {
+      Paint textPaint = new Paint();
+      textPaint.setAntiAlias(true);
+      textPaint.setTextSize(36);
+      textPaint.setStyle(Paint.Style.FILL);
+      textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+      textPaint.setColor(fill.isComputerFill ? Color.parseColor("#FD9B16") : Color.parseColor("#22C822"));
+      textPaint.setTextAlign(Paint.Align.RIGHT);
 
-    String scoreText = String.valueOf(fill.scoreNumber);
-    canvas.drawText(scoreText, boxRight - 18, boxTop + 28, textPaint);
+      // Add shadow for better visibility
+      textPaint.setShadowLayer(3, 1, 1, Color.BLACK);
+
+      String scoreText = String.valueOf(fill.scoreNumber);
+      canvas.drawText(scoreText, boxRight - 12, boxTop + 42, textPaint);
+    } else {
+      Log.w("GameView", "Fill has scoreNumber = 0, not displaying. isComputerFill: " + fill.isComputerFill);
+    }
   }
 
   class PaintThread extends Thread {
